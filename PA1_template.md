@@ -70,7 +70,7 @@ summary(activity$steps)
 
 ## What is mean total number of steps taken per day?
 
-We will follow the these steps
+We will now follow the next sequence
 
 1st step aggregate results of steps per date in a new dataframe called agresteps
 
@@ -118,6 +118,7 @@ sd(agresteps$x, na.rm = TRUE)
 
 Then we can show the distribution of daily steps
 
+
 ```r
 hist(agresteps$x, xlab = "Steps per day", main = "Distribution of steps", ylab = "Frequency")
 abline(v = mean(agresteps$x, na.rm = TRUE))
@@ -158,7 +159,8 @@ abline(v = agreinterval$Group.1[which.max(agreinterval$x)], col = "blue")
 
 ![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
 
-The maximum value is
+
+The maximum value for the series is
 
 ```r
 max(agreinterval$x)
@@ -168,7 +170,8 @@ max(agreinterval$x)
 ## [1] 206.2
 ```
 
-and the hour of the max is given by
+
+and the hour of the day corresponding with the max is given by
 
 ```r
 agreinterval$Group.1[which.max(agreinterval$x)]
@@ -284,7 +287,7 @@ summary(agresteps$x)
 ##      41    8840   10800   10800   13300   21200       8
 ```
 
-No change in mean but some changes in sd
+No relevant change in mean but some changes in sd
 
 
 ```r
@@ -330,7 +333,8 @@ abline(v = mean(agresteps_im$x, na.rm = TRUE))
 par(mfrow = c(1, 1))
 ```
 
-about the distribution of activity along the day
+
+About the distribution of activity along the day we generate a new dataframe
 
 ```r
 agreinterval_im <- aggregate(activity_imput$steps, list(activity_imput$interval), 
@@ -414,7 +418,7 @@ unique(activity_imput$day)
 ```
 
 
-we can now observe the different distributions per day of the week 
+We can now observe the different distributions of activity per day of the week 
 
 ```r
 library(lattice)
@@ -424,7 +428,7 @@ xyplot(steps ~ interval | day, data = activity_imput, layout = c(3, 3), type = "
 
 ![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-23.png) 
 
-we can now summarize two different subsets one for weekend one for working days
+We can now summarize two different subsets one for weekend and one for working days
 
 ```r
 wd <- c("lunes", "martes", "miércoles", "jueves", "viernes")
@@ -445,7 +449,7 @@ head(activity_imput)
 ```
 
 
-we can now reproduce the analysis for total steps
+With this data we can now reproduce the analysis for total steps
 
 
 ```r
@@ -473,8 +477,9 @@ str(agresteps_wd)
 ```
 
 
-The statistics now split between the two groups
-For weekends
+The statistics now split between the two groups.
+
+a) For weekends
 
 ```r
 mean(agresteps_we$x, na.rm = TRUE)
@@ -501,7 +506,7 @@ sd(agresteps_we$x, na.rm = TRUE)
 ```
 
 
-For working days
+b) For working days
 
 ```r
 mean(agresteps_wd$x, na.rm = TRUE)
@@ -527,7 +532,9 @@ sd(agresteps_wd$x, na.rm = TRUE)
 ## [1] 4364
 ```
 
-we observe that there is more activity on weekends than in working day.
+
+We observe that there is more activity on weekends than in working day.
+
 The histograms now can be compared 
 
 ```r
