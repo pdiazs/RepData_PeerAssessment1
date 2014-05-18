@@ -33,7 +33,7 @@ summary(activity$steps)
 
 ## What is mean total number of steps taken per day?
 
-We will now follow the next sequence
+We will now follow the next sequence:
 
 1st step aggregate results of steps per date in a new dataframe called agresteps
 
@@ -52,7 +52,7 @@ sd(agresteps$x, na.rm=TRUE)
 
 ```
 
-Then we can show the distribution of daily steps
+3rd step: Then we can show the distribution of daily steps
 
 ```{r fig.width=7, fig.height=6}
 hist(agresteps$x, xlab="Steps per day", main="Distribution of steps", ylab="Frequency")
@@ -68,7 +68,7 @@ agreinterval<- aggregate(activity$steps, list(activity$interval), mean, na.rm=TR
 str(agreinterval)
 ```
 
-and then plot the series
+4th step: plot the series
 
 ```{r fig.width=7, fig.height=6}
 plot(agreinterval, type="l", main="Average data per 5 min interval", xlab="hour", ylab="steps", xaxt = "n" )
@@ -195,19 +195,43 @@ unique(activity_imput$day)
 ```
 
 We can now observe the different distributions of activity per day of the week 
+
 ```{r}
-library(lattice)
-activity_imput <- transform(activity_imput, day = factor(day))
-xyplot(steps ~ interval | day, data = activity_imput, layout = c(3, 3), type="l")
+agreinterval_dd<- aggregate(steps~ interval+day,data=activity_imput, mean, na.rm=TRUE)
+str(agreinterval_dd)
 ```
+
+```{r fig.width=15, fig.height=8}
+library(lattice)
+agreinterval_dd <- transform(agreinterval_dd, day = factor(day))
+z<-c("Sunday","Thursday", "Monday","Tuesday","Wednesday","Saturday","Friday" )
+xyplot(steps ~ interval | day, data = agreinterval_dd,index.cond=list(c(3,4,5,2,7,6,1)), type="l", strip=strip.custom(factor.levels=z))
+```
+
+
 We can now summarize two different subsets one for weekend and one for working days
 ```{r}
 wd<-c("lunes", "martes","miércoles", "jueves", "viernes")
 we<-c("sábado", "domingo")
+agreinterval_dd$w[agreinterval_dd$day %in% we] = "weekend"
 activity_imput$w[activity_imput$day %in% we] = "weekend"
+agreinterval_dd$w[agreinterval_dd$day %in% wd] = "workday"
 activity_imput$w[activity_imput$day %in% wd] = "workday"
-head(activity_imput)
+head(agreinterval_dd)
 ```
+
+and then the combined series results in
+
+```{r}
+agreinterval_ww<- aggregate(steps~ interval+w,agreinterval_dd, mean, na.rm=TRUE)
+str(agreinterval_ww)
+```
+
+```{r fig.width=12, fig.height=12}
+agreinterval_ww <- transform(agreinterval_ww, w = factor(w))
+xyplot(steps ~ interval | w, data = agreinterval_ww, layout = c(1, 2), type="l")
+```
+
 
 With this data we can now reproduce the analysis for total steps
 
@@ -256,19 +280,22 @@ str(agreinterval_wd)
 
 and then plot the series
 
-```{r fig.width=10, fig.height=5}
-par(mfrow=c(1,2))
+```{r fig.width=10, fig.height=10}
+par(mfrow=c(2,2))
 plot(agreinterval_we, type="l", main="Average data per 5 min interval(weekend)", xlab="hour", ylab="steps", xaxt = "n" )
 axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
 abline(h=max(agreinterval_we$x), col="blue")
 abline(h=mean(agreinterval_we$x, na.rm=TRUE), col="red")
 abline(v=agreinterval_we$Group.1[which.max(agreinterval_we$x)], col="blue")
+hist(agresteps_we$x, xlab="Steps per day", main="Distribution of steps (weekends)", ylab="Frequency")
+abline(v=mean(agresteps_we$x, na.rm=TRUE))
 plot(agreinterval_wd, type="l", main="Average data per 5 min interval(workday)", xlab="hour", ylab="steps", xaxt = "n" )
 axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
 abline(h=max(agreinterval_wd$x), col="blue")
 abline(h=mean(agreinterval_wd$x, na.rm=TRUE), col="red")
 abline(v=agreinterval_wd$Group.1[which.max(agreinterval_wd$x)], col="blue")
-
+hist(agresteps_wd$x, xlab="Steps per day", main="Distribution of steps(working days)", ylab="Frequency")
+abline(v=mean(agresteps_wd$x, na.rm=TRUE))
 par(mfrow=c(1,1))
 ```
 
