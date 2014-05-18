@@ -1,20 +1,268 @@
 # Reproducible Research: Peer Assessment 1
 
-
 ## Loading and preprocessing the data
 
+We will follow the next sequence of steps
+
+1st step downloading the file from the adresss http://d396qusza40orc.cloudfront.net/repdata/data/activity.zip. If we download manually it should be available for R
+
+```{r}
+download.file("http://d396qusza40orc.cloudfront.net/repdata/data/activity.zip","activity.zip")
+```
+
+2nd step requires loading the data into memory. For this purpose we should first unzip the resulting file 
+
+```{r}
+unzip("activity.zip", "activity.csv")
+```
+
+3rd Step: then we can directly load the file dataset
+
+```{r}
+activity <- read.csv( "activity.csv")
+```
+
+4th Step: Then a dataframe called activity has been loaded in memory that we can review
+
+```{r}
+str(activity)
+head(activity)
+summary(activity$steps)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+We will follow the these steps
 
+1st step aggregate results of steps per date in a new dataframe called agresteps
+
+```{r}
+agresteps<- aggregate(activity$steps, list(activity$date), sum)
+str(agresteps)
+```
+
+
+2nd step obtaining the statistics of the data
+
+```{r}
+mean(agresteps$x, na.rm=TRUE)
+median(agresteps$x, na.rm=TRUE)
+sd(agresteps$x, na.rm=TRUE)
+
+```
+
+Then we can show the distribution of daily steps
+```{r fig.width=7, fig.height=6}
+hist(agresteps$x, xlab="Steps per day", main="Distribution of steps", ylab="Frequency")
+abline(v=mean(agresteps$x, na.rm=TRUE))
+```
 
 ## What is the average daily activity pattern?
 
+The question now is to calculate the mean steps per interval, for this purpose we first create a new dataframe
 
+```{r}
+agreinterval<- aggregate(activity$steps, list(activity$interval), mean, na.rm=TRUE)
+str(agreinterval)
+```
 
+and then plot the series
+
+```{r fig.width=7, fig.height=6}
+plot(agreinterval, type="l", main="Average data per 5 min interval", xlab="hour", ylab="steps", xaxt = "n" )
+axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
+abline(h=max(agreinterval$x), col="blue")
+abline(h=mean(agreinterval$x, na.rm=TRUE), col="red")
+abline(v=agreinterval$Group.1[which.max(agreinterval$x)], col="blue")
+
+```
+The maximum value is
+```{r}
+max(agreinterval$x)
+```
+and the hour of the max is given by
+```{r}
+agreinterval$Group.1[which.max(agreinterval$x)]
+```
+
+and the average
+```{r}
+mean(agreinterval$x, na.rm=TRUE)
+```
 ## Imputing missing values
 
+We first check the number of NA data and the percentage of errors
+
+```{r}
+n<-summary(activity$steps)[7]
+n
+m<-nrow(activity)
+m
+# % of NA cases
+n/m*100
+```
+
+we create a new dataframe and correct NA with average data per interval
+
+```{r}
+activity_imput<-activity
+for (i in 1:dim(activity)[1]) {
+    if (is.na(activity$steps[i])) {
+        activity_imput$steps[i]<-agreinterval$x[which(agreinterval$Group.1==activity_imput$interval[i])]
+    } 
+}
+```
+
+Then we can check the new dataframe
+
+```{r}
+agresteps_im<- aggregate(activity_imput$steps, list(activity_imput$date), sum)
+str(agresteps_im)
+summary(agresteps_im$x)
+```
+
+versus the previous version
+
+```{r}
+str(agresteps)
+summary(agresteps$x)
+```
+No change in mean but some changes in sd
+
+```{r}
+mean(agresteps_im$x, na.rm=TRUE)
+median(agresteps_im$x, na.rm=TRUE)
+sd(agresteps_im$x, na.rm=TRUE)
+
+```
+
+The histograms now can be compared 
+```{r fig.width=10, fig.height=5}
+par(mfrow=c(1,2))
+hist(agresteps$x, xlab="Steps per day", main="Distribution of steps (initial)", ylab="Frequency")
+abline(v=mean(agresteps$x, na.rm=TRUE))
+hist(agresteps_im$x, xlab="Steps per day", main="Distribution of steps(corrected)", ylab="Frequency")
+abline(v=mean(agresteps_im$x, na.rm=TRUE))
+par(mfrow=c(1,1))
+```
+about the distribution of activity along the day
+```{r}
+agreinterval_im<- aggregate(activity_imput$steps, list(activity_imput$interval), mean, na.rm=TRUE)
+str(agreinterval_im)
+```
+
+and then plot the series
+
+```{r fig.width=10, fig.height=5}
+par(mfrow=c(1,2))
+plot(agreinterval, type="l", main="Average data per 5 min interval(initial)", xlab="hour", ylab="steps", xaxt = "n" )
+axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
+abline(h=max(agreinterval$x), col="blue")
+abline(h=mean(agreinterval$x, na.rm=TRUE), col="red")
+abline(v=agreinterval$Group.1[which.max(agreinterval$x)], col="blue")
+plot(agreinterval_im, type="l", main="Average data per 5 min interval(corrected)", xlab="hour", ylab="steps", xaxt = "n" )
+axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
+abline(h=max(agreinterval_im$x), col="blue")
+abline(h=mean(agreinterval_im$x, na.rm=TRUE), col="red")
+abline(v=agreinterval_im$Group.1[which.max(agreinterval_im$x)], col="blue")
+
+par(mfrow=c(1,1))
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+To check this we should identify two subsets in the initial dataframe, first for weekends, second for weekdays.We will use corrected dataset
+
+The procedure then is 
+1st step  transform initial data data for dates into Date class
+```{r}
+activity_imput$date <- as.Date(as.character(activity_imput$date), "%Y-%m-%d")
+head(activity$imput)
+```
+
+2nd step create a factor variable in dataframe capturing the days of the week
+(sorry days appear to be in spanish¡¡¡¡)
+```{r}
+activity_imput$day <- weekdays(activity_imput$date)
+head(activity$imput)
+unique(activity_imput$day)
+```
+
+we can now observe the different distributions per day of the week 
+```{r}
+library(lattice)
+activity_imput <- transform(activity_imput, day = factor(day))
+xyplot(steps ~ interval | day, data = activity_imput, layout = c(3, 3), type="l")
+```
+we can now summarize two different subsets one for weekend one for working days
+```{r}
+wd<-c("lunes", "martes","miércoles", "jueves", "viernes")
+we<-c("sábado", "domingo")
+activity_imput$w[activity_imput$day %in% we] = "weekend"
+activity_imput$w[activity_imput$day %in% wd] = "workday"
+head(activity_imput)
+```
+
+we can now reproduce the analysis for total steps
+
+```{r}
+agresteps_we<- aggregate(activity_imput$steps[activity_imput$w=="weekend"], list(activity_imput$date[activity_imput$w=="weekend"]), sum)
+agresteps_wd<- aggregate(activity_imput$steps[activity_imput$w=="workday"], list(activity_imput$date[activity_imput$w=="workday"]), sum)
+str(agresteps_we)
+str(agresteps_wd)
+```
+
+The statistics now split between the two groups
+For weekends
+```{r}
+mean(agresteps_we$x, na.rm=TRUE)
+median(agresteps_we$x, na.rm=TRUE)
+sd(agresteps_we$x, na.rm=TRUE)
+```
+
+For working days
+```{r}
+mean(agresteps_wd$x, na.rm=TRUE)
+median(agresteps_wd$x, na.rm=TRUE)
+sd(agresteps_wd$x, na.rm=TRUE)
+```
+we observe that there is more activity on weekends than in working day.
+The histograms now can be compared 
+```{r fig.width=10, fig.height=5}
+par(mfrow=c(1,2))
+hist(agresteps_we$x, xlab="Steps per day", main="Distribution of steps (weekends)", ylab="Frequency")
+abline(v=mean(agresteps_we$x, na.rm=TRUE))
+hist(agresteps_wd$x, xlab="Steps per day", main="Distribution of steps(working days)", ylab="Frequency")
+abline(v=mean(agresteps_wd$x, na.rm=TRUE))
+par(mfrow=c(1,1))
+```
+
+And for the distribution along the day
+```{r}
+agreinterval_we<- aggregate(activity_imput$steps[activity_imput$w=="weekend"], list(activity_imput$interval[activity_imput$w=="weekend"]), mean, na.rm=TRUE)
+agreinterval_wd<- aggregate(activity_imput$steps[activity_imput$w=="workday"], list(activity_imput$interval[activity_imput$w=="workday"]), mean, na.rm=TRUE)
+str(agreinterval_we)
+str(agreinterval_wd)
+```
+
+and then plot the series
+
+```{r fig.width=10, fig.height=5}
+par(mfrow=c(1,2))
+plot(agreinterval_we, type="l", main="Average data per 5 min interval(weekend)", xlab="hour", ylab="steps", xaxt = "n" )
+axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
+abline(h=max(agreinterval_we$x), col="blue")
+abline(h=mean(agreinterval_we$x, na.rm=TRUE), col="red")
+abline(v=agreinterval_we$Group.1[which.max(agreinterval_we$x)], col="blue")
+plot(agreinterval_wd, type="l", main="Average data per 5 min interval(workday)", xlab="hour", ylab="steps", xaxt = "n" )
+axis(side = 1, at = c(0,500,1000,1500,2000,2400), labels = c("00:00", "05:00", "10:00", "15:00", "20:00", "24:00"))
+abline(h=max(agreinterval_wd$x), col="blue")
+abline(h=mean(agreinterval_wd$x, na.rm=TRUE), col="red")
+abline(v=agreinterval_wd$Group.1[which.max(agreinterval_wd$x)], col="blue")
+
+par(mfrow=c(1,1))
+```
+
+we can observe clear differences on the temporal distribution of activity due to different individual´s behavior during weekends and working days
